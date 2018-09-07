@@ -2,7 +2,7 @@
 
 Usage:
 
-./life << file >> << t >>
+./life < file > < t >
   
 An input file <file> contains a description of the initial situation of the boards. The maximum execution time is <t>.
   
