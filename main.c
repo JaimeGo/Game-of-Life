@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <locale.h>
+#include <unistd.h>
+
 
 struct Board{
     int ** cells;
@@ -49,6 +51,7 @@ void freeAllMemory(struct Game * game, int D, int numBoards){
         }
 
         free(game->boards[i].cells);
+        free(game->boards[i].name);
     }
 
     free(game->boards);
@@ -113,8 +116,8 @@ void readLine(char * lineStart, int i, struct Game * game){
 
 
 
-    int lastX;
-    int lastY;
+    int lastX=0;
+    int lastY=0;
 
     int j=0;
 
@@ -173,7 +176,86 @@ void readLine(char * lineStart, int i, struct Game * game){
 
 }
 
+void runBoard(struct Board* oldBoard, int D, int A, int B, int C){
+    struct Board newBoard;
 
+    newBoard.name=(char*)malloc(sizeof(oldBoard->name));
+    strcpy(newBoard.name,oldBoard->name);
+
+    newBoard.aliveCells=oldBoard->aliveCells;
+
+
+    newBoard.cells=(int**)calloc((size_t)D, sizeof(int*));
+
+    for (int k=0;k<D;k++){
+        newBoard.cells[k]=(int*)calloc((size_t)D, sizeof(int));
+    }
+
+
+    for (int i=0;i<D;i++){
+
+        for (int j=0;j<D;j++){
+            int left=i-1;
+            int right=i+1;
+            int up=j-1;
+            int down=j+1;
+
+            int aliveNear=0;
+
+            if (left>=0 && left<=D){
+                aliveNear+=oldBoard->cells[left][j];
+
+                if (up>=0 && up<=D){
+                    aliveNear+=oldBoard->cells[left][up];
+                }
+
+                if (down>=0 && down<=D){
+                    aliveNear+=oldBoard->cells[left][down];
+                }
+            }
+
+            if (right>=0 && right<=D){
+                aliveNear+=oldBoard->cells[right][j];
+
+                if (up>=0 && up<=D){
+                    aliveNear+=oldBoard->cells[right][up];
+                }
+
+                if (down>=0 && down<=D){
+                    aliveNear+=oldBoard->cells[right][down];
+                }
+            }
+
+            if (up>=0 && up<=D){
+                aliveNear+=oldBoard->cells[i][up];
+            }
+
+            if (down>=0 && down<=D){
+                aliveNear+=oldBoard->cells[i][down];
+            }
+
+
+
+            if (oldBoard->cells[i][j]){
+                if (aliveNear>=B && aliveNear<= C){
+                    newBoard.cells[i][j]=1;
+                }
+            }
+
+            else {
+                if (aliveNear==A){
+                    newBoard.cells[i][j]=1;
+                }
+            }
+
+
+
+        }
+    }
+
+
+
+}
 
 
 int main(int argc, char * argv[]) {
@@ -194,11 +276,11 @@ int main(int argc, char * argv[]) {
 
     int isFirst=1;
 
-    int numBoards;
-    int A;
-    int B;
-    int C;
-    int D;
+    int numBoards=0;
+    int A=0;
+    int B=0;
+    int C=0;
+    int D=0;
     
     int lineNumber=0;
 
@@ -243,8 +325,38 @@ int main(int argc, char * argv[]) {
 
 
     // INICIO SIMULACIÓN
+    int processesFinished=0;
+
+    for (int q=0; q<numBoards;q++){
+
+        pid_t pid;
+        if ((pid = fork()) == 0){
+            runBoard(&mainGame.boards[q], D, A, B, C)
+        }
+        else do {
+                if ((pid = waitpid(pid, &status, 1)) == 0) {
+
+                    printf("Still running!\n");
+
+                    //must check if NOTIME
+
+                    sleep(1);
+                } else {
+                    printf("EXIT!\n");
+                    processesFinished++;
+                    if (processesFinished==numBoards){
 
 
+                        //all done by cells -> END
+
+
+                    }
+                }
+            } while (pid == 0);
+
+
+
+    }
 
 
 
